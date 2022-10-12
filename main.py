@@ -206,7 +206,7 @@ class TicketSystem(discord.ui.View):
 
         b.set_footer(text='Click the 🔒 button to close the ticket!')
 
-        await ticket_channel.send(content=x, embed=b, view=view)
+        await ticket_channel.send(embed=b)
 
         question2 = await client.wait_for('message', check=check)
 
@@ -1625,7 +1625,7 @@ async def die(interaction: discord.Interaction):
 """)
 
         with open("transcripts.html", "rb") as file:
-            transcripts = interaction.guild.get_channel(935375668412301322)
+            transcripts = interaction.guild.get_channel(1025274312820801596)
             msg = await discord.utils.get(interaction.channel.history(oldest_first=True, limit=1))
                 
             time = pytz.timezone('America/Tijuana')
@@ -1666,8 +1666,8 @@ async def die(interaction: discord.Interaction):
 @app_commands.describe(member="Who do you want to add to this ticket?")
 @app_commands.default_permissions(administrator=True)
 async def addaccess(interaction: discord.Interaction, member: discord.Member):
-    valid_things = ("general", "apply", "report", "appeal", "other")
-    if any(thing in interaction.channel.name for thing in valid_things):
+    valid_channels = ("general", "apply", "report", "appeal", "other")
+    if any(thing in interaction.channel.name for thing in valid_channels):
         await interaction.channel.set_permissions(member,
                                             send_messages=True,
                                             read_messages=True,
@@ -1684,8 +1684,8 @@ async def addaccess(interaction: discord.Interaction, member: discord.Member):
 @app_commands.describe(member="Who do you want to remove from this ticket?")
 @app_commands.default_permissions(administrator=True)
 async def removeaccess(interaction: discord.Interaction, member: discord.Member):
-    valid_things = ("general", "apply", "report", "appeal", "other")
-    if any(thing in interaction.channel.name for thing in valid_things):
+    valid_channels = ("general", "apply", "report", "appeal", "other")
+    if any(thing in interaction.channel.name for thing in valid_channels):
         await interaction.channel.set_permissions(member,
                                             send_messages=False,
                                             read_messages=False,
@@ -1698,10 +1698,9 @@ async def removeaccess(interaction: discord.Interaction, member: discord.Member)
         await interaction.response.send_message('This is not a valid ticket!', ephemeral=True)
 
 @client.tree.command(guild=discord.Object(id=944668000072630312), description="Prompt the ticket with a close button.")
-@app_commands.default_permissions(administrator=True)
 async def close(interaction: discord.Interaction):
-    valid_things = ("general", "apply", "report", "appeal", "other")
-    if any(thing in interaction.channel.name for thing in valid_things):
+    valid_channels = ("general", "apply", "report", "appeal", "other")
+    if any(thing in interaction.channel.name for thing in valid_channels):
         view = ForceTicketClose()
         embed = discord.Embed(
             title="Closure Confirmation",
@@ -2350,7 +2349,8 @@ async def history(interaction: discord.Interaction, member: discord.User):
 #\\\\\\\\\\\\Suggestions////////////
 @client.event
 async def on_message(message):
-    suggestionchannel = message.guild.get_channel(1026054642968301598)
+    guild = client.get_guild(944668000072630312)
+    suggestionchannel = guild.get_channel(1026054642968301598)
     if message.channel == suggestionchannel:
         if message.author.bot:
             pass
