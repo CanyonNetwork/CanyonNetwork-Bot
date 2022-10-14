@@ -21,17 +21,9 @@ class RasiaBotView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label='Announcements', style=discord.ButtonStyle.green, custom_id='persistent_view:green')
-    async def green(self, interaction: discord.Interaction, button: discord.ui.Button):
-        announcements = discord.utils.get(interaction.guild.roles,name='Announcements')
-        if announcements in interaction.user.roles:
-            await interaction.user.remove_roles(announcements)
-            await interaction.response.send_message('You have removed the Announcements role!', ephemeral=True)
-            return
-        else:
-            await interaction.user.add_roles(announcements)
-            await interaction.response.send_message('You have added the Announcements role!', ephemeral=True)
-            return
+    @discord.ui.button(label='Test Button', style=discord.ButtonStyle.green, custom_id='test_button')
+    async def test(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message('Test button!', ephemeral=True)
 
 playing = discord.Game(name="canyonnetwork.net")
 class RasiaBot(commands.Bot):
