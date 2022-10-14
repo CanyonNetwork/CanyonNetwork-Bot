@@ -42,7 +42,8 @@ class RasiaBot(commands.Bot):
     async def on_ready(self):
         if not self.persistent_views_added:
             self.add_view(RasiaBotView())
-            self.add_view(TicketSystem())
+            self.add_view(TicketButton())
+            self.add_view(TicketDropdownView())
             self.add_view(TicketClose())
             self.add_view(AdminTicket())
             self.add_view(Verification())
@@ -134,477 +135,502 @@ class Roles(discord.ui.View):
             await interaction.user.add_roles(events)
             await interaction.response.send_message('You have opt into getting Event notification pings!', ephemeral=True) 
 
-class TicketSystem(discord.ui.View):
+class TicketButton(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label='General Support', style=discord.ButtonStyle.green, custom_id='ticket:1')
-    async def general(self, interaction: discord.Interaction, button: discord.ui.Button):
-        
-        await interaction.response.send_message('The ticket is being created...', ephemeral=True)
-        
-        db = await aiosqlite.connect('database.db')
-        cursor = await db.execute('SELECT ticket FROM counter')
-        rows = await cursor.fetchone()
-        await db.execute('UPDATE counter SET ticket=ticket + ?', (1,))
-        await db.commit()
+    @discord.ui.button(label='Click Here', style=discord.ButtonStyle.blurple, custom_id='ticket_button')
+    async def ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+        view = TicketDropdownView()
+        embed = discord.Embed(
+            title="Support Tickets",
+            description=
+            f"""
+Choose your option below to create a ticket in the right category!
+        """,
+            color=0xff00e6)
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-        category_channel = interaction.guild.get_channel(945108081807868005)
-        ticket_channel = await category_channel.create_text_channel(
-            f"general-{rows[0]}")
-        await ticket_channel.set_permissions(interaction.guild.get_role(interaction.guild.id),
-                                         send_messages=False,
-                                         read_messages=False)
+class TicketDropdown(discord.ui.Select):
+    def __init__(self):
+            options = [
+                discord.SelectOption(label='General Support'),
+                discord.SelectOption(label='Staff Application'),
+                discord.SelectOption(label='Report Player'),
+                discord.SelectOption(label='Appeals'),
+                discord.SelectOption(label='Partnerships'),
+                discord.SelectOption(label='Other')
+            ]
+            super().__init__(placeholder='Choose your option!', min_values=1, max_values=1, options=options, custom_id="ticket_dropdown")
 
-        cursor = await db.execute('SELECT valid_roles FROM tickets')
-        rows = await cursor.fetchall()
-        for (role_id,) in rows:
+    async def callback(self, interaction: discord.Interaction):
+        if self.values[0] == 'General Support':
+            db = await aiosqlite.connect('database.db')
+            cursor = await db.execute('SELECT ticket FROM counter')
+            rows = await cursor.fetchone()
+            await db.execute('UPDATE counter SET ticket=ticket + ?', (1,))
+            await db.commit()
 
-            role = interaction.guild.get_role(role_id)
+            category_channel = interaction.guild.get_channel(945108081807868005)
+            ticket_channel = await category_channel.create_text_channel(
+                f"general-{rows[0]}")
+            await ticket_channel.set_permissions(interaction.guild.get_role(interaction.guild.id),
+                                            send_messages=False,
+                                            read_messages=False)
+
+            await interaction.response.edit_message(content=f'The ticket has been created at {ticket_channel.mention}.', view=None, embed=None)
+
+            cursor = await db.execute('SELECT valid_roles FROM tickets')
+            rows = await cursor.fetchall()
+            for (role_id,) in rows:
+
+                role = interaction.guild.get_role(role_id)
+                
+                await ticket_channel.set_permissions(role,
+                                                send_messages=True,
+                                                read_messages=True,
+                                                add_reactions=True,
+                                                embed_links=True,
+                                                read_message_history=True,
+                                                external_emojis=True)
             
-            await ticket_channel.set_permissions(role,
-                                             send_messages=True,
-                                             read_messages=True,
-                                             add_reactions=True,
-                                             embed_links=True,
-                                             read_message_history=True,
-                                             external_emojis=True)
+            await ticket_channel.set_permissions(interaction.user,
+                                            send_messages=True,
+                                            read_messages=True,
+                                            add_reactions=True,
+                                            embed_links=True,
+                                            attach_files=True,
+                                            read_message_history=True,
+                                            external_emojis=True)
+
+            await db.close()
+
+            def check(message):
+                return message.channel == ticket_channel and message.author == interaction.user
+
+            x = f'{interaction.user.mention}'
+
+            view = TicketClose()
+
+            a = discord.Embed(title="Question 1/3",
+                                description=f"What is your in game name?",
+                                color=0xff00e6)
+
+            a.set_footer(text='Click the 🔒 button to close the ticket!')
+
+            await ticket_channel.send(content=x, embed=a, view=view)
+
+            question1 = await client.wait_for('message', check=check)
+
+            b = discord.Embed(title="Question 2/3",
+                                description=f"What do you need assistance with?",
+                                color=0xff00e6)
+
+            b.set_footer(text='Click the 🔒 button to close the ticket!')
+
+            await ticket_channel.send(embed=b)
+
+            question2 = await client.wait_for('message', check=check)
+
+            c = discord.Embed(title="Question 3/3",
+                                description=f"Any other information you can provide? If not, reply with `N/A`.",
+                                color=0xff00e6)
+
+            await ticket_channel.send(embed=c)
+
+            question3 = await client.wait_for('message', check=check)
+
         
-        await ticket_channel.set_permissions(interaction.user,
-                                         send_messages=True,
-                                         read_messages=True,
-                                         add_reactions=True,
-                                         embed_links=True,
-                                         attach_files=True,
-                                         read_message_history=True,
-                                         external_emojis=True)
+            embed=discord.Embed(title="", 
+            description=f"Support will be with you shortly! \nThis ticket will close in 24 hours of inactivity.", 
+            color=discord.Color.green())
 
-        await db.close()
+            embed.set_footer(text="Close this ticket by clicking the 🔒 button.")
 
-        await interaction.edit_original_response(content=f'The ticket has been created at {ticket_channel.mention}.')
+            em = discord.Embed(title="Responses",
+                                description=f"**IGN**: {question1.content} \n**Reason**: {question2.content} \n**Information**: {question3.content}",
+                                color=discord.Color.green())
 
-        def check(message):
-            return message.channel == ticket_channel and message.author == interaction.user
+            view = TicketClose()
 
-        x = f'{interaction.user.mention}'
+            await ticket_channel.send(embeds=[embed, em], view=view)
 
-        view = TicketClose()
-
-        a = discord.Embed(title="Question 1",
-                            description=f"What is your in game name?",
-                            color=0xff00e6)
-
-        a.set_footer(text='Click the 🔒 button to close the ticket!')
-
-        await ticket_channel.send(content=x, embed=a, view=view)
-
-        question1 = await client.wait_for('message', check=check)
-
-        b = discord.Embed(title="Question 2",
-                            description=f"What do you need assistance with?",
-                            color=0xff00e6)
-
-        b.set_footer(text='Click the 🔒 button to close the ticket!')
-
-        await ticket_channel.send(embed=b)
-
-        question2 = await client.wait_for('message', check=check)
-
-        c = discord.Embed(title="Question 3",
-                            description=f"Any other information you can provide? If not, reply with `N/A`.",
-                            color=0xff00e6)
-
-        await ticket_channel.send(embed=c)
-
-        question3 = await client.wait_for('message', check=check)
-
-      
-        embed=discord.Embed(title="", 
-        description=f"Support will be with you shortly! \nThis ticket will close in 24 hours of inactivity.", 
-        color=discord.Color.green())
-
-        embed.set_footer(text="Close this ticket by clicking the 🔒 button.")
-
-        em = discord.Embed(title="Responses",
-                            description=f"**IGN**: {question1.content} \n**Reason**: {question2.content} \n**Information**: {question3.content}",
-                            color=discord.Color.green())
-
-        view = TicketClose()
-
-        await ticket_channel.send(embeds=[embed, em], view=view)
-
-    @discord.ui.button(label='Staff Application', style=discord.ButtonStyle.red, custom_id='ticket:2')
-    async def staff(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.values[0] == 'Staff Application':
+            await interaction.response.edit_message(content='To apply for staff, visit this Google Form: \nhttps://docs.google.com/forms/d/e/1FAIpQLSeofa-6rxOM1HyqUuocP8Zc9BCUhMWONSZIJmTOJB_lXU9K2w/viewform', view=None, embed=None)
         
-        await interaction.response.send_message('The ticket is being created...', ephemeral=True)
-        
-        db = await aiosqlite.connect('database.db')
-        cursor = await db.execute('SELECT ticket FROM counter')
-        rows = await cursor.fetchone()
-        await db.execute('UPDATE counter SET ticket=ticket + ?', (1,))
-        await db.commit()
+        if self.values[0] == 'Report Player':
+            db = await aiosqlite.connect('database.db')
+            cursor = await db.execute('SELECT ticket FROM counter')
+            rows = await cursor.fetchone()
+            await db.execute('UPDATE counter SET ticket=ticket + ?', (1,))
+            await db.commit()
 
-        category_channel = interaction.guild.get_channel(1025956581285822516)
-        ticket_channel = await category_channel.create_text_channel(
-            f"apply-{rows[0]}")
-        await ticket_channel.set_permissions(interaction.guild.get_role(interaction.guild.id),
-                                         send_messages=False,
-                                         read_messages=False)
+            category_channel = interaction.guild.get_channel(945107032149745864)
+            ticket_channel = await category_channel.create_text_channel(
+                f"report-{rows[0]}")
+            await ticket_channel.set_permissions(interaction.guild.get_role(interaction.guild.id),
+                                            send_messages=False,
+                                            read_messages=False)
 
-        cursor = await db.execute('SELECT valid_roles FROM tickets')
-        rows = await cursor.fetchall()
-        
-        await ticket_channel.set_permissions(interaction.user,
-                                         send_messages=True,
-                                         read_messages=True,
-                                         add_reactions=True,
-                                         embed_links=True,
-                                         attach_files=True,
-                                         read_message_history=True,
-                                         external_emojis=True)
+            await interaction.response.edit_message(content=f'The ticket has been created at {ticket_channel.mention}.', view=None, embed=None)
 
-        await db.close()
+            cursor = await db.execute('SELECT valid_roles FROM tickets')
+            rows = await cursor.fetchall()
+            for (role_id,) in rows:
 
-        await interaction.edit_original_response(content=f'The ticket has been created at {ticket_channel.mention}.')
-
-        def check(message):
-            return message.channel == ticket_channel and message.author == interaction.user
-
-        x = f'{interaction.user.mention}'
-
-        view = TicketClose()
-
-        a = discord.Embed(title="Question 1",
-                            description=f"What is your in game name?",
-                            color=0xff00e6)
-
-        a.set_footer(text='Click the 🔒 button to close the ticket!')
-
-        await ticket_channel.send(content=x, embed=a, view=view)
-
-        question1 = await client.wait_for('message', check=check)
-
-        b = discord.Embed(title="Question 2",
-                            description=f"What is your age?",
-                            color=0xff00e6)
-
-        await ticket_channel.send(content=x, embed=b)
-
-        question2 = await client.wait_for('message', check=check)
-
-        c = discord.Embed(title="Question 3",
-                            description=f"Is your Minecraft account premium or non-premium?",
-                            color=0xff00e6)
-
-        await ticket_channel.send(embed=c)
-
-        question3 = await client.wait_for('message', check=check)
-
-        d = discord.Embed(title="Question 4",
-                            description=f"Do you have any experience with moderating? If so, please state what you've done with corresponding links.",
-                            color=0xff00e6)
-
-        await ticket_channel.send(embed=d)
-
-        question4 = await client.wait_for('message', check=check)
-      
-        embed=discord.Embed(title="", 
-        description=f"Support will be with you shortly! \nThis ticket will close in 24 hours of inactivity.", 
-        color=discord.Color.green())
-
-        embed.set_footer(text="Close this ticket by clicking the 🔒 button.")
-
-        em = discord.Embed(title="Responses",
-                            description=f"**IGN**: {question1.content} \n**Age**: {question2.content} \n**Premium?**: {question3.content} \n**Experience**: {question4.content}",
-                            color=discord.Color.green())
-
-        view = TicketClose()
-
-        await ticket_channel.send(embeds=[embed, em], view=view)
-
-    @discord.ui.button(label='Report Player', style=discord.ButtonStyle.blurple, custom_id='ticket:3')
-    async def report(self, interaction: discord.Interaction, button: discord.ui.Button):
-        
-        await interaction.response.send_message('The ticket is being created...', ephemeral=True)
-        
-        db = await aiosqlite.connect('database.db')
-        cursor = await db.execute('SELECT ticket FROM counter')
-        rows = await cursor.fetchone()
-        await db.execute('UPDATE counter SET ticket=ticket + ?', (1,))
-        await db.commit()
-
-        category_channel = interaction.guild.get_channel(945107032149745864)
-        ticket_channel = await category_channel.create_text_channel(
-            f"report-{rows[0]}")
-        await ticket_channel.set_permissions(interaction.guild.get_role(interaction.guild.id),
-                                         send_messages=False,
-                                         read_messages=False)
-
-        cursor = await db.execute('SELECT valid_roles FROM tickets')
-        rows = await cursor.fetchall()
-        for (role_id,) in rows:
-
-            role = interaction.guild.get_role(role_id)
+                role = interaction.guild.get_role(role_id)
+                
+                await ticket_channel.set_permissions(role,
+                                                send_messages=True,
+                                                read_messages=True,
+                                                add_reactions=True,
+                                                embed_links=True,
+                                                read_message_history=True,
+                                                external_emojis=True)
             
-            await ticket_channel.set_permissions(role,
-                                             send_messages=True,
-                                             read_messages=True,
-                                             add_reactions=True,
-                                             embed_links=True,
-                                             read_message_history=True,
-                                             external_emojis=True)
-        
-        await ticket_channel.set_permissions(interaction.user,
-                                         send_messages=True,
-                                         read_messages=True,
-                                         add_reactions=True,
-                                         embed_links=True,
-                                         attach_files=True,
-                                         read_message_history=True,
-                                         external_emojis=True)
+            await ticket_channel.set_permissions(interaction.user,
+                                            send_messages=True,
+                                            read_messages=True,
+                                            add_reactions=True,
+                                            embed_links=True,
+                                            attach_files=True,
+                                            read_message_history=True,
+                                            external_emojis=True)
 
-        await db.close()
+            await db.close()
 
-        await interaction.edit_original_response(content=f'The ticket has been created at {ticket_channel.mention}.')
+            def check(message):
+                return message.channel == ticket_channel and message.author == interaction.user
 
-        def check(message):
-            return message.channel == ticket_channel and message.author == interaction.user
+            x = f'{interaction.user.mention}'
 
-        x = f'{interaction.user.mention}'
+            view = TicketClose()
 
-        view = TicketClose()
+            a = discord.Embed(title="Question 1/4",
+                                description=f"What is your in game name?",
+                                color=0xff00e6)
 
-        a = discord.Embed(title="Question 1",
-                            description=f"What is your in game name?",
-                            color=0xff00e6)
+            a.set_footer(text='Click the 🔒 button to close the ticket!')
 
-        a.set_footer(text='Click the 🔒 button to close the ticket!')
+            await ticket_channel.send(content=x, embed=a, view=view)
 
-        await ticket_channel.send(content=x, embed=a, view=view)
+            question1 = await client.wait_for('message', check=check)
 
-        question1 = await client.wait_for('message', check=check)
+            b = discord.Embed(title="Question 2/4",
+                                description=f"What is the name of the user you're reporting?",
+                                color=0xff00e6)
 
-        b = discord.Embed(title="Question 2",
-                            description=f"What is the name of the user you're reporting?",
-                            color=0xff00e6)
+            await ticket_channel.send(embed=b)
 
-        await ticket_channel.send(embed=b)
+            question2 = await client.wait_for('message', check=check)
 
-        question2 = await client.wait_for('message', check=check)
+            c = discord.Embed(title="Question 3/4",
+                                description=f"Why are you reporting this user?",
+                                color=0xff00e6)
 
-        c = discord.Embed(title="Question 3",
-                            description=f"Why are you reporting this user?",
-                            color=0xff00e6)
+            await ticket_channel.send(embed=c)
 
-        await ticket_channel.send(embed=c)
+            question3 = await client.wait_for('message', check=check)      
 
-        question3 = await client.wait_for('message', check=check)      
+            d = discord.Embed(title="Question 4/4",
+                                description=f"Do you have any evidence to back up your claims? \n \nIf you don't this ticket will most likely be closed.",
+                                color=0xff00e6)
 
-        d = discord.Embed(title="Question 4",
-                            description=f"Do you have any evidence to back up your claims? \n \nIf you don't this ticket will most likely be closed.",
-                            color=0xff00e6)
+            await ticket_channel.send(embed=d)
 
-        await ticket_channel.send(embed=d)
+            question4 = await client.wait_for('message', check=check)   
 
-        question4 = await client.wait_for('message', check=check)   
+            embed=discord.Embed(title="", 
+            description=f"Support will be with you shortly! \nThis ticket will close in 24 hours of inactivity.", 
+            color=discord.Color.green())
 
-        embed=discord.Embed(title="", 
-        description=f"Support will be with you shortly! \nThis ticket will close in 24 hours of inactivity.", 
-        color=discord.Color.green())
+            embed.set_footer(text="Close this ticket by clicking the 🔒 button.")
 
-        embed.set_footer(text="Close this ticket by clicking the 🔒 button.")
+            em = discord.Embed(title="Responses",
+                                description=f"**IGN**: {question1.content} \n**User**: {question2.content} \n**Reason**: {question3.content} \n**Evidence**: {question4.content}",
+                                color=discord.Color.green())
 
-        em = discord.Embed(title="Responses",
-                            description=f"**IGN**: {question1.content} \n**User**: {question2.content} \n**Reason**: {question3.content} \n**Evidence**: {question4.content}",
-                            color=discord.Color.green())
+            view = TicketClose()
 
-        view = TicketClose()
+            await ticket_channel.send(embeds=[embed, em], view=view)
 
-        await ticket_channel.send(embeds=[embed, em], view=view)
+        if self.values[0] == 'Appeals':
+            db = await aiosqlite.connect('database.db')
+            cursor = await db.execute('SELECT ticket FROM counter')
+            rows = await cursor.fetchone()
+            await db.execute('UPDATE counter SET ticket=ticket + ?', (1,))
+            await db.commit()
 
-    @discord.ui.button(label='Appeals', style=discord.ButtonStyle.green, custom_id='ticket:4')
-    async def appeal(self, interaction: discord.Interaction, button: discord.ui.Button):
-        
-        await interaction.response.send_message('The ticket is being created...', ephemeral=True)
-        
-        db = await aiosqlite.connect('database.db')
-        cursor = await db.execute('SELECT ticket FROM counter')
-        rows = await cursor.fetchone()
-        await db.execute('UPDATE counter SET ticket=ticket + ?', (1,))
-        await db.commit()
+            category_channel = interaction.guild.get_channel(945108020617154631)
+            ticket_channel = await category_channel.create_text_channel(
+                f"appeal-{rows[0]}")
+            await ticket_channel.set_permissions(interaction.guild.get_role(interaction.guild.id),
+                                            send_messages=False,
+                                            read_messages=False)
 
-        category_channel = interaction.guild.get_channel(945108020617154631)
-        ticket_channel = await category_channel.create_text_channel(
-            f"appeal-{rows[0]}")
-        await ticket_channel.set_permissions(interaction.guild.get_role(interaction.guild.id),
-                                         send_messages=False,
-                                         read_messages=False)
+            await interaction.response.edit_message(content=f'The ticket has been created at {ticket_channel.mention}.', view=None, embed=None)
 
-        cursor = await db.execute('SELECT valid_roles FROM tickets')
-        rows = await cursor.fetchall()
-        for (role_id,) in rows:
+            cursor = await db.execute('SELECT valid_roles FROM tickets')
+            rows = await cursor.fetchall()
+            for (role_id,) in rows:
 
-            role = interaction.guild.get_role(role_id)
+                role = interaction.guild.get_role(role_id)
+                
+                await ticket_channel.set_permissions(role,
+                                                send_messages=True,
+                                                read_messages=True,
+                                                add_reactions=True,
+                                                embed_links=True,
+                                                read_message_history=True,
+                                                external_emojis=True)
             
-            await ticket_channel.set_permissions(role,
-                                             send_messages=True,
-                                             read_messages=True,
-                                             add_reactions=True,
-                                             embed_links=True,
-                                             read_message_history=True,
-                                             external_emojis=True)
-        
-        await ticket_channel.set_permissions(interaction.user,
-                                         send_messages=True,
-                                         read_messages=True,
-                                         add_reactions=True,
-                                         embed_links=True,
-                                         attach_files=True,
-                                         read_message_history=True,
-                                         external_emojis=True)
+            await ticket_channel.set_permissions(interaction.user,
+                                            send_messages=True,
+                                            read_messages=True,
+                                            add_reactions=True,
+                                            embed_links=True,
+                                            attach_files=True,
+                                            read_message_history=True,
+                                            external_emojis=True)
 
-        await db.close()
+            await db.close()
 
-        await interaction.edit_original_response(content=f'The ticket has been created at {ticket_channel.mention}.')
+            def check(message):
+                return message.channel == ticket_channel and message.author == interaction.user
 
-        def check(message):
-            return message.channel == ticket_channel and message.author == interaction.user
+            x = f'{interaction.user.mention}'
 
-        x = f'{interaction.user.mention}'
+            view = TicketClose()
 
-        view = TicketClose()
+            a = discord.Embed(title="Question 1/4",
+                                description=f"What is your in game name?",
+                                color=0xff00e6)
 
-        a = discord.Embed(title="Question 1",
-                            description=f"What is your in game name?",
-                            color=0xff00e6)
+            a.set_footer(text='Click the 🔒 button to close the ticket!')
 
-        a.set_footer(text='Click the 🔒 button to close the ticket!')
+            await ticket_channel.send(content=x, embed=a, view=view)
 
-        await ticket_channel.send(content=x, embed=a, view=view)
+            question1 = await client.wait_for('message', check=check)
 
-        question1 = await client.wait_for('message', check=check)
+            b = discord.Embed(title="Question 2/4",
+                                description=f"Why were you punished?",
+                                color=0xff00e6)
 
-        b = discord.Embed(title="Question 2",
-                            description=f"Why were you punished?",
-                            color=0xff00e6)
+            await ticket_channel.send(embed=b)
 
-        await ticket_channel.send(embed=b)
+            question2 = await client.wait_for('message', check=check)
 
-        question2 = await client.wait_for('message', check=check)
+            c = discord.Embed(title="Question 3/4",
+                                description=f"Do you think this punishment was false?",
+                                color=0xff00e6)
 
-        c = discord.Embed(title="Question 3",
-                            description=f"Do you think this punishment was false?",
-                            color=0xff00e6)
+            await ticket_channel.send(embed=c)
 
-        await ticket_channel.send(embed=c)
+            question3 = await client.wait_for('message', check=check)      
 
-        question3 = await client.wait_for('message', check=check)      
+            d = discord.Embed(title="Question 4/4",
+                                description=f"Why should we remove the punishment from you?",
+                                color=0xff00e6)
 
-        d = discord.Embed(title="Question 4",
-                            description=f"Why should we remove the punishment from you?",
-                            color=0xff00e6)
+            await ticket_channel.send(embed=d)
 
-        await ticket_channel.send(embed=d)
+            question4 = await client.wait_for('message', check=check)   
 
-        question4 = await client.wait_for('message', check=check)   
+            embed=discord.Embed(title="", 
+            description=f"Support will be with you shortly! \nThis ticket will close in 24 hours of inactivity.", 
+            color=discord.Color.green())
 
-        embed=discord.Embed(title="", 
-        description=f"Support will be with you shortly! \nThis ticket will close in 24 hours of inactivity.", 
-        color=discord.Color.green())
+            embed.set_footer(text="Close this ticket by clicking the 🔒 button.")
 
-        embed.set_footer(text="Close this ticket by clicking the 🔒 button.")
+            em = discord.Embed(title="Responses",
+                                description=f"**IGN**: {question1.content} \n**Reason**: {question2.content} \n**False**: {question3.content} \n**Because**: {question4.content}",
+                                color=discord.Color.green())
 
-        em = discord.Embed(title="Responses",
-                            description=f"**IGN**: {question1.content} \n**Reason**: {question2.content} \n**False**: {question3.content} \n**Because**: {question4.content}",
-                            color=discord.Color.green())
+            view = TicketClose()
 
-        view = TicketClose()
+            await ticket_channel.send(embeds=[embed, em], view=view)
 
-        await ticket_channel.send(embeds=[embed, em], view=view)
+        if self.values[0] == 'Partnerships':
+            db = await aiosqlite.connect('database.db')
+            cursor = await db.execute('SELECT ticket FROM counter')
+            rows = await cursor.fetchone()
+            await db.execute('UPDATE counter SET ticket=ticket + ?', (1,))
+            await db.commit()
 
-    @discord.ui.button(label='Other', style=discord.ButtonStyle.red, custom_id='ticket:5')
-    async def other(self, interaction: discord.Interaction, button: discord.ui.Button):
-        
-        await interaction.response.send_message('The ticket is being created...', ephemeral=True)
-        
-        db = await aiosqlite.connect('database.db')
-        cursor = await db.execute('SELECT ticket FROM counter')
-        rows = await cursor.fetchone()
-        await db.execute('UPDATE counter SET ticket=ticket + ?', (1,))
-        await db.commit()
+            category_channel = interaction.guild.get_channel(1030383739735388180)
+            ticket_channel = await category_channel.create_text_channel(
+                f"partner-{rows[0]}")
+            await ticket_channel.set_permissions(interaction.guild.get_role(interaction.guild.id),
+                                            send_messages=False,
+                                            read_messages=False)
 
-        category_channel = interaction.guild.get_channel(1025277588534460446)
-        ticket_channel = await category_channel.create_text_channel(
-            f"other-{rows[0]}")
-        await ticket_channel.set_permissions(interaction.guild.get_role(interaction.guild.id),
-                                         send_messages=False,
-                                         read_messages=False)
+            await interaction.response.edit_message(content=f'The ticket has been created at {ticket_channel.mention}.', view=None, embed=None)
 
-        cursor = await db.execute('SELECT valid_roles FROM tickets')
-        rows = await cursor.fetchall()
-        for (role_id,) in rows:
+            cursor = await db.execute('SELECT valid_roles FROM tickets')
+            rows = await cursor.fetchall()
+            for (role_id,) in rows:
 
-            role = interaction.guild.get_role(role_id)
+                role = interaction.guild.get_role(role_id)
+                
+                await ticket_channel.set_permissions(role,
+                                                send_messages=True,
+                                                read_messages=True,
+                                                add_reactions=True,
+                                                embed_links=True,
+                                                read_message_history=True,
+                                                external_emojis=True)
             
-            await ticket_channel.set_permissions(role,
-                                             send_messages=True,
-                                             read_messages=True,
-                                             add_reactions=True,
-                                             embed_links=True,
-                                             read_message_history=True,
-                                             external_emojis=True)
-        
-        await ticket_channel.set_permissions(interaction.user,
-                                         send_messages=True,
-                                         read_messages=True,
-                                         add_reactions=True,
-                                         embed_links=True,
-                                         attach_files=True,
-                                         read_message_history=True,
-                                         external_emojis=True)
+            await ticket_channel.set_permissions(interaction.user,
+                                            send_messages=True,
+                                            read_messages=True,
+                                            add_reactions=True,
+                                            embed_links=True,
+                                            attach_files=True,
+                                            read_message_history=True,
+                                            external_emojis=True)
 
-        await db.close()
+            await db.close()
 
-        await interaction.edit_original_response(content=f'The ticket has been created at {ticket_channel.mention}.')
+            def check(message):
+                return message.channel == ticket_channel and message.author == interaction.user
 
-        def check(message):
-            return message.channel == ticket_channel and message.author == interaction.user
+            x = f'{interaction.user.mention}'
 
-        x = f'{interaction.user.mention}'
+            view = TicketClose()
 
-        view = TicketClose()
+            a = discord.Embed(title="Question 1/4",
+                                description=f"What is the invite to your server?",
+                                color=0xff00e6)
 
-        a = discord.Embed(title="Question 1",
-                            description=f"What is your in game name?",
-                            color=0xff00e6)
+            a.set_footer(text='Click the 🔒 button to close the ticket!')
 
-        a.set_footer(text='Click the 🔒 button to close the ticket!')
+            await ticket_channel.send(content=x, embed=a, view=view)
 
-        await ticket_channel.send(content=x, embed=a, view=view)
+            question1 = await client.wait_for('message', check=check)
 
-        question1 = await client.wait_for('message', check=check)
+            b = discord.Embed(title="Question 2/4",
+                                description=f"What region is the server hosted in?",
+                                color=0xff00e6)
 
-        b = discord.Embed(title="Question 2",
-                            description=f"How can we help?",
-                            color=0xff00e6)
+            await ticket_channel.send(embed=b)
 
-        await ticket_channel.send(embed=b)
+            question2 = await client.wait_for('message', check=check)
 
-        question2 = await client.wait_for('message', check=check)  
+            c = discord.Embed(title="Question 3/4",
+                                description=f"What is your server's IP?",
+                                color=0xff00e6)
 
-        embed=discord.Embed(title="", 
-        description=f"Support will be with you shortly! \nThis ticket will close in 24 hours of inactivity.", 
-        color=discord.Color.green())
+            await ticket_channel.send(embed=c)
 
-        embed.set_footer(text="Close this ticket by clicking the 🔒 button.")
+            question3 = await client.wait_for('message', check=check)      
 
-        em = discord.Embed(title="Responses",
-                            description=f"**IGN**: {question1.content} \n**Reason**: {question2.content}",
-                            color=discord.Color.green())
+            d = discord.Embed(title="Question 4/4",
+                                description=f"Is there anything else we should know?",
+                                color=0xff00e6)
 
-        view = TicketClose()
+            await ticket_channel.send(embed=d)
 
-        await ticket_channel.send(embeds=[embed, em], view=view)
+            question4 = await client.wait_for('message', check=check)   
+
+            embed=discord.Embed(title="", 
+            description=f"An administator will be with you shortly. While you wait, please send us the advertisement to your server.", 
+            color=discord.Color.green())
+
+            embed.set_footer(text="Close this ticket by clicking the 🔒 button.")
+
+            em = discord.Embed(title="Responses",
+                                description=f"**Invite**: {question1.content} \n**Region**: {question2.content} \n**IP**: {question3.content} \n**Info**: {question4.content}",
+                                color=discord.Color.green())
+
+            view = TicketClose()
+
+            await ticket_channel.send(embeds=[embed, em], view=view)
+
+        if self.values[0] == 'Other':
+            db = await aiosqlite.connect('database.db')
+            cursor = await db.execute('SELECT ticket FROM counter')
+            rows = await cursor.fetchone()
+            await db.execute('UPDATE counter SET ticket=ticket + ?', (1,))
+            await db.commit()
+
+            category_channel = interaction.guild.get_channel(1025277588534460446)
+            ticket_channel = await category_channel.create_text_channel(
+                f"other-{rows[0]}")
+            await ticket_channel.set_permissions(interaction.guild.get_role(interaction.guild.id),
+                                            send_messages=False,
+                                            read_messages=False)
+
+            await interaction.response.edit_message(content=f'The ticket has been created at {ticket_channel.mention}.', view=None, embed=None)
+
+            cursor = await db.execute('SELECT valid_roles FROM tickets')
+            rows = await cursor.fetchall()
+            for (role_id,) in rows:
+
+                role = interaction.guild.get_role(role_id)
+                
+                await ticket_channel.set_permissions(role,
+                                                send_messages=True,
+                                                read_messages=True,
+                                                add_reactions=True,
+                                                embed_links=True,
+                                                read_message_history=True,
+                                                external_emojis=True)
+            
+            await ticket_channel.set_permissions(interaction.user,
+                                            send_messages=True,
+                                            read_messages=True,
+                                            add_reactions=True,
+                                            embed_links=True,
+                                            attach_files=True,
+                                            read_message_history=True,
+                                            external_emojis=True)
+
+            await db.close()
+
+            def check(message):
+                return message.channel == ticket_channel and message.author == interaction.user
+
+            x = f'{interaction.user.mention}'
+
+            view = TicketClose()
+
+            a = discord.Embed(title="Question 1/2",
+                                description=f"What is your in game name?",
+                                color=0xff00e6)
+
+            a.set_footer(text='Click the 🔒 button to close the ticket!')
+
+            await ticket_channel.send(content=x, embed=a, view=view)
+
+            question1 = await client.wait_for('message', check=check)
+
+            b = discord.Embed(title="Question 2/2",
+                                description=f"How can we help?",
+                                color=0xff00e6)
+
+            await ticket_channel.send(embed=b)
+
+            question2 = await client.wait_for('message', check=check)  
+
+            embed=discord.Embed(title="", 
+            description=f"Support will be with you shortly! \nThis ticket will close in 24 hours of inactivity.", 
+            color=discord.Color.green())
+
+            embed.set_footer(text="Close this ticket by clicking the 🔒 button.")
+
+            em = discord.Embed(title="Responses",
+                                description=f"**IGN**: {question1.content} \n**Reason**: {question2.content}",
+                                color=discord.Color.green())
+
+            view = TicketClose()
+
+            await ticket_channel.send(embeds=[embed, em], view=view)
+
+class TicketDropdownView(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        super().__init__(timeout=None)
+        self.add_item(TicketDropdown())
 
 class AdminTicket(discord.ui.View):
     def __init__(self):
@@ -1123,14 +1149,12 @@ async def notifications(interaction: discord.Interaction):
 @client.tree.command(guild=discord.Object(id=944668000072630312), description="Send the ticket embed and buttons.")
 @app_commands.default_permissions(administrator=True)
 async def ticket(interaction: discord.Interaction):
-    view = TicketSystem()
+    view = TicketButton()
     embed = discord.Embed(
         title="Support Tickets",
         description=
         f"""
-Click the corresponding button below.
-
-We will answer your support ticket as quickly as we can, please be sure to answer all the questions and provide relevant information.
+Click the button below to create a ticket!
     """,
         color=0xff00e6)
     embed.set_footer(text="Opening and closing a ticket with no reason will result in a warn.")
@@ -2411,6 +2435,19 @@ Make them related to the server, any joke suggestions will get you blacklisted f
 """,
         color=0xff00e6)
     await ctx.send(embed=embed)
+
+@client.tree.command(guild=discord.Object(id=944668000072630312), description="Shows what the IP of the server is.")
+async def ip(interaction: discord.Interaction):
+    await interaction.response.send_message("The server's IP is `canyonnetwork.net`!")
+
+@client.tree.command(guild=discord.Object(id=944668000072630312), description="Shows what the numeric IP of the server is.")
+@app_commands.default_permissions(manage_nicknames=True)
+async def numip(interaction: discord.Interaction):
+    valid_channels = ("general", "apply", "report", "appeal", "other")
+    if any(thing in interaction.channel.name for thing in valid_channels):
+        await interaction.response.send_message("Try to connect with `131.153.47.134:25621`. This should fix your issue!")
+    else:
+        await interaction.response.send_message('You can only use this in a ticket channel!', ephemeral=True)
 
 @client.command()
 async def ip(ctx):
