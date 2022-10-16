@@ -1077,8 +1077,11 @@ async def enlarge(ctx, emoji: discord.PartialEmoji = None):
         await ctx.send(emoji.url)
 
 @client.command()
-async def pfp(ctx):
-    await ctx.reply(ctx.guild.icon.url)
+async def pfp(ctx, member: discord.Member = None):
+    if member is None:
+        await ctx.reply(ctx.guild.icon.url)
+    else:
+        await ctx.reply(member.avatar.url)
 
 #\\\\\\\\\\\\DO NOT USE UNLESS YOU KNOW WHAT YOU ARE DOING////////////
 @client.tree.command(guild=discord.Object(id=944668000072630312), description="Send the rules and verification buttons.")
