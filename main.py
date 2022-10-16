@@ -248,7 +248,7 @@ class TicketDropdown(discord.ui.Select):
             await ticket_channel.send(embeds=[embed, em], view=view)
 
         if self.values[0] == 'Staff Application':
-            await interaction.response.edit_message(content='To apply for staff, visit this Google Form: \nhttps://docs.google.com/forms/d/e/1FAIpQLSeofa-6rxOM1HyqUuocP8Zc9BCUhMWONSZIJmTOJB_lXU9K2w/viewform', view=None, embed=None)
+            await interaction.response.edit_message(content='To apply for staff, visit this Google Form: \nhttps://forms.gle/BSh6rR8H21EMHYX68', view=None, embed=None)
         
         if self.values[0] == 'Report Player':
             db = await aiosqlite.connect('database.db')
