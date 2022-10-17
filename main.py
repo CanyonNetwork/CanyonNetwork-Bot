@@ -148,6 +148,7 @@ class TicketDropdown(discord.ui.Select):
             options = [
                 discord.SelectOption(label='General Support'),
                 discord.SelectOption(label='Staff Application'),
+                discord.SelectOption(label='YouTube Application'),
                 discord.SelectOption(label='Report Player'),
                 discord.SelectOption(label='Appeals'),
                 discord.SelectOption(label='Partnerships'),
@@ -250,6 +251,97 @@ class TicketDropdown(discord.ui.Select):
         if self.values[0] == 'Staff Application':
             await interaction.response.edit_message(content='To apply for staff, visit this Google Form: \nhttps://forms.gle/BSh6rR8H21EMHYX68', view=None, embed=None)
         
+        if self.values[0] == 'YouTube Application':
+            db = await aiosqlite.connect('database.db')
+            cursor = await db.execute('SELECT ticket FROM counter')
+            rows = await cursor.fetchone()
+            await db.execute('UPDATE counter SET ticket=ticket + ?', (1,))
+            await db.commit()
+
+            category_channel = interaction.guild.get_channel(1031435203677278208)
+            ticket_channel = await category_channel.create_text_channel(
+                f"youtube-{rows[0]}")
+            await ticket_channel.set_permissions(interaction.guild.get_role(interaction.guild.id),
+                                            send_messages=False,
+                                            read_messages=False)
+
+            await interaction.response.edit_message(content=f'The ticket has been created at {ticket_channel.mention}.', view=None, embed=None)
+
+            cursor = await db.execute('SELECT valid_roles FROM tickets')
+            rows = await cursor.fetchall()
+            for (role_id,) in rows:
+
+                role = interaction.guild.get_role(role_id)
+                
+                await ticket_channel.set_permissions(role,
+                                                send_messages=True,
+                                                read_messages=True,
+                                                add_reactions=True,
+                                                embed_links=True,
+                                                read_message_history=True,
+                                                external_emojis=True)
+            
+            await ticket_channel.set_permissions(interaction.user,
+                                            send_messages=True,
+                                            read_messages=True,
+                                            add_reactions=True,
+                                            embed_links=True,
+                                            attach_files=True,
+                                            read_message_history=True,
+                                            external_emojis=True)
+
+            await db.close()
+
+            def check(message):
+                return message.channel == ticket_channel and message.author == interaction.user
+
+            x = f'{interaction.user.mention}'
+
+            view = TicketClose()
+
+            a = discord.Embed(title="Question 1/3",
+                                description="What is your in game name?",
+                                color=0xff00e6)
+
+            a.set_footer(text='Click the 🔒 button to close the ticket!')
+
+            await ticket_channel.send(content=x, embed=a, view=view)
+
+            question1 = await client.wait_for('message', check=check)
+
+            b = discord.Embed(title="Question 2/3",
+                                description="What is the link to your channel?",
+                                color=0xff00e6)
+
+            b.set_footer(text='Click the 🔒 button to close the ticket!')
+
+            await ticket_channel.send(embed=b)
+
+            question2 = await client.wait_for('message', check=check)
+
+            c = discord.Embed(title="Question 3/3",
+                                description="Do you agree that you have to make us at least one video a month to maintain the YouTube role?",
+                                color=0xff00e6)
+
+            await ticket_channel.send(embed=c)
+
+            question3 = await client.wait_for('message', check=check)
+
+        
+            embed=discord.Embed(title="", 
+            description=f"Support will be with you shortly! \nThis ticket will close in 24 hours of inactivity.", 
+            color=discord.Color.green())
+
+            embed.set_footer(text="Close this ticket by clicking the 🔒 button.")
+
+            em = discord.Embed(title="Responses",
+                                description=f"**IGN**: {question1.content} \n**Channel**: {question2.content} \n**Agreement**: {question3.content}",
+                                color=discord.Color.green())
+
+            view = TicketClose()
+
+            await ticket_channel.send(embeds=[embed, em], view=view)
+
         if self.values[0] == 'Report Player':
             db = await aiosqlite.connect('database.db')
             cursor = await db.execute('SELECT ticket FROM counter')
@@ -2346,7 +2438,7 @@ async def mutes():
             embed = discord.Embed(
                 title="Member Unmuted",
                 description=
-                f"{member} ({member.id}) was unmuted as their mute punishment expired.:",
+                f"{member} ({member.id}) was unmuted as their mute punishment expired.",
                 color=0x0CFF00)
             embed.set_author(name=member, icon_url=member.display_avatar.url)
             embed.timestamp = datetime.now()
