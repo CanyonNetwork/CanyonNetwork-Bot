@@ -17,7 +17,7 @@ from typing import Optional
 intents = discord.Intents.all()
 intents.message_content = True
 
-class RasiaBotView(discord.ui.View):
+class CanyonNetworkBotView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
@@ -26,14 +26,14 @@ class RasiaBotView(discord.ui.View):
         await interaction.response.send_message('Test button!', ephemeral=True)
 
 playing = discord.Game(name="canyonnetwork.net")
-class RasiaBot(commands.Bot):
+class CanyonNetworkBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix=commands.when_mentioned_or('.', '!'), owner_id=503641822141349888, intents=intents, activity=playing, status=discord.Status.online)
         self.persistent_views_added = False
 
     async def on_ready(self):
         if not self.persistent_views_added:
-            self.add_view(RasiaBotView())
+            self.add_view(CanyonNetworkBotView())
             self.add_view(TicketButton())
             self.add_view(TicketDropdownView())
             self.add_view(TicketClose())
@@ -737,7 +737,7 @@ class AdminTicket(discord.ui.View):
                 firstmessagetime = msg[0].created_at.strftime("%m/%d/%y, %I:%M %p")
                 y = msg[0].mentions[0]
                 file.write(f"""<information> \nTicket Creator: {msg[0].author} \nCreated At: {firstmessagetime} \nTicket Name: {interaction.channel} \n</information>
-<!DOCTYPE html><html><head><title>Ticket Transcript</title><meta name='viewport' content='width=device-width, initial-scale=1.0'><meta charset='UTF-8'><link href='https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap' rel='stylesheet'></head><body><style>information {{display: none;}} body {{background-color: #181d23;color: white;font-family: 'Open-Sans', sans-serif;margin: 50px;}}.ticket-header h2 {{font-weight: 400;text-transform: capitalize;margin-bottom: 0;color: #fff;}}.ticket-header p {{font-size: 14px;}}.ticket-header .children .item {{margin-right: 25px;display: flex;align-items: center;}}.ticket-header .children {{display: flex;}}.ticket-header .children .item a {{margin-right: 7px;padding: 5px 10px;padding-top: 6px;background-color: #3c434b;border-radius: 3px;font-size: 12px;}}.messages {{margin-top: 30px;display: flex;flex-direction: column;}}.messages .item {{display: flex;margin-bottom: 20px;}}.messages .item .left img {{border-radius: 100%;height: 50px;}}.messages .item .left {{margin-right: 20px;}}.messages .item .right a:nth-child(1) {{font-weight: 400;margin: 0 15px 0 0;font-size: 19px;color: #fff;}}.messages .item .right a:nth-child(2) {{text-transform: capitalize;color: #ffffff;font-size: 12px;}}.messages .item .right div {{display: flex;align-items: center;margin-top: 5px;}}.messages .item .right p {{margin: 0;white-space: normal;line-height: 2;color: #fff;font-size: 15px;}}.messages .item .right p {{max-width: 700px;margin-top: 10px;}}.messages .item {{margin-bottom: 31px;}}@media  only screen and (max-width: 600px) {{body {{margin: 0px;padding: 25px;width: calc(100% - 50px);}}.ticket-header h2 {{margin-top: 0px;}}.ticket-header .children {{display: flex;flex-wrap: wrap;}}</style><div class='ticket-header'><h2>{interaction.channel} Transcript</h2><div class='children'><div class='item'><a>CREATED</a><p>{firstmessagetime} GMT</p></div><div class='item'><a>USER</a><p>{y}</p></div></div></div><div class='messages'><div class='item'><div class='left'><img src='{interaction.guild.icon}'> </div><div class='right'><div><a>{interaction.guild.name}</a><a></a></div><p>Transcript File For Rasia Network</p></div></div>
+<!DOCTYPE html><html><head><title>Ticket Transcript</title><meta name='viewport' content='width=device-width, initial-scale=1.0'><meta charset='UTF-8'><link href='https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap' rel='stylesheet'></head><body><style>information {{display: none;}} body {{background-color: #181d23;color: white;font-family: 'Open-Sans', sans-serif;margin: 50px;}}.ticket-header h2 {{font-weight: 400;text-transform: capitalize;margin-bottom: 0;color: #fff;}}.ticket-header p {{font-size: 14px;}}.ticket-header .children .item {{margin-right: 25px;display: flex;align-items: center;}}.ticket-header .children {{display: flex;}}.ticket-header .children .item a {{margin-right: 7px;padding: 5px 10px;padding-top: 6px;background-color: #3c434b;border-radius: 3px;font-size: 12px;}}.messages {{margin-top: 30px;display: flex;flex-direction: column;}}.messages .item {{display: flex;margin-bottom: 20px;}}.messages .item .left img {{border-radius: 100%;height: 50px;}}.messages .item .left {{margin-right: 20px;}}.messages .item .right a:nth-child(1) {{font-weight: 400;margin: 0 15px 0 0;font-size: 19px;color: #fff;}}.messages .item .right a:nth-child(2) {{text-transform: capitalize;color: #ffffff;font-size: 12px;}}.messages .item .right div {{display: flex;align-items: center;margin-top: 5px;}}.messages .item .right p {{margin: 0;white-space: normal;line-height: 2;color: #fff;font-size: 15px;}}.messages .item .right p {{max-width: 700px;margin-top: 10px;}}.messages .item {{margin-bottom: 31px;}}@media  only screen and (max-width: 600px) {{body {{margin: 0px;padding: 25px;width: calc(100% - 50px);}}.ticket-header h2 {{margin-top: 0px;}}.ticket-header .children {{display: flex;flex-wrap: wrap;}}</style><div class='ticket-header'><h2>{interaction.channel} Transcript</h2><div class='children'><div class='item'><a>CREATED</a><p>{firstmessagetime} GMT</p></div><div class='item'><a>USER</a><p>{y}</p></div></div></div><div class='messages'><div class='item'><div class='left'><img src='{interaction.guild.icon}'> </div><div class='right'><div><a>{interaction.guild.name}</a><a></a></div><p>Transcript File For CanyonNetwork</p></div></div>
 """)
                 async for message in interaction.channel.history(limit=None, oldest_first=True):
                     msgtime = message.created_at.strftime("%m/%d/%y, %I:%M %p")
@@ -896,7 +896,7 @@ class ForceTicketClose(discord.ui.View):
                 firstmessagetime = msg[0].created_at.strftime("%m/%d/%y, %I:%M %p")
                 y = msg[0].mentions[0]
                 file.write(f"""<information> \nTicket Creator: {msg[0].author} \nCreated At: {firstmessagetime} \nTicket Name: {interaction.channel} \n</information>
-<!DOCTYPE html><html><head><title>Ticket Transcript</title><meta name='viewport' content='width=device-width, initial-scale=1.0'><meta charset='UTF-8'><link href='https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap' rel='stylesheet'></head><body><style>information {{display: none;}} body {{background-color: #181d23;color: white;font-family: 'Open-Sans', sans-serif;margin: 50px;}}.ticket-header h2 {{font-weight: 400;text-transform: capitalize;margin-bottom: 0;color: #fff;}}.ticket-header p {{font-size: 14px;}}.ticket-header .children .item {{margin-right: 25px;display: flex;align-items: center;}}.ticket-header .children {{display: flex;}}.ticket-header .children .item a {{margin-right: 7px;padding: 5px 10px;padding-top: 6px;background-color: #3c434b;border-radius: 3px;font-size: 12px;}}.messages {{margin-top: 30px;display: flex;flex-direction: column;}}.messages .item {{display: flex;margin-bottom: 20px;}}.messages .item .left img {{border-radius: 100%;height: 50px;}}.messages .item .left {{margin-right: 20px;}}.messages .item .right a:nth-child(1) {{font-weight: 400;margin: 0 15px 0 0;font-size: 19px;color: #fff;}}.messages .item .right a:nth-child(2) {{text-transform: capitalize;color: #ffffff;font-size: 12px;}}.messages .item .right div {{display: flex;align-items: center;margin-top: 5px;}}.messages .item .right p {{margin: 0;white-space: normal;line-height: 2;color: #fff;font-size: 15px;}}.messages .item .right p {{max-width: 700px;margin-top: 10px;}}.messages .item {{margin-bottom: 31px;}}@media  only screen and (max-width: 600px) {{body {{margin: 0px;padding: 25px;width: calc(100% - 50px);}}.ticket-header h2 {{margin-top: 0px;}}.ticket-header .children {{display: flex;flex-wrap: wrap;}}</style><div class='ticket-header'><h2>{interaction.channel} Transcript</h2><div class='children'><div class='item'><a>CREATED</a><p>{firstmessagetime} GMT</p></div><div class='item'><a>USER</a><p>{y}</p></div></div></div><div class='messages'><div class='item'><div class='left'><img src='{interaction.guild.icon}'> </div><div class='right'><div><a>{interaction.guild.name}</a><a></a></div><p>Transcript File For Rasia Network</p></div></div>
+<!DOCTYPE html><html><head><title>Ticket Transcript</title><meta name='viewport' content='width=device-width, initial-scale=1.0'><meta charset='UTF-8'><link href='https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap' rel='stylesheet'></head><body><style>information {{display: none;}} body {{background-color: #181d23;color: white;font-family: 'Open-Sans', sans-serif;margin: 50px;}}.ticket-header h2 {{font-weight: 400;text-transform: capitalize;margin-bottom: 0;color: #fff;}}.ticket-header p {{font-size: 14px;}}.ticket-header .children .item {{margin-right: 25px;display: flex;align-items: center;}}.ticket-header .children {{display: flex;}}.ticket-header .children .item a {{margin-right: 7px;padding: 5px 10px;padding-top: 6px;background-color: #3c434b;border-radius: 3px;font-size: 12px;}}.messages {{margin-top: 30px;display: flex;flex-direction: column;}}.messages .item {{display: flex;margin-bottom: 20px;}}.messages .item .left img {{border-radius: 100%;height: 50px;}}.messages .item .left {{margin-right: 20px;}}.messages .item .right a:nth-child(1) {{font-weight: 400;margin: 0 15px 0 0;font-size: 19px;color: #fff;}}.messages .item .right a:nth-child(2) {{text-transform: capitalize;color: #ffffff;font-size: 12px;}}.messages .item .right div {{display: flex;align-items: center;margin-top: 5px;}}.messages .item .right p {{margin: 0;white-space: normal;line-height: 2;color: #fff;font-size: 15px;}}.messages .item .right p {{max-width: 700px;margin-top: 10px;}}.messages .item {{margin-bottom: 31px;}}@media  only screen and (max-width: 600px) {{body {{margin: 0px;padding: 25px;width: calc(100% - 50px);}}.ticket-header h2 {{margin-top: 0px;}}.ticket-header .children {{display: flex;flex-wrap: wrap;}}</style><div class='ticket-header'><h2>{interaction.channel} Transcript</h2><div class='children'><div class='item'><a>CREATED</a><p>{firstmessagetime} GMT</p></div><div class='item'><a>USER</a><p>{y}</p></div></div></div><div class='messages'><div class='item'><div class='left'><img src='{interaction.guild.icon}'> </div><div class='right'><div><a>{interaction.guild.name}</a><a></a></div><p>Transcript File For CanyonNetwork</p></div></div>
 """)
                 async for message in interaction.channel.history(limit=None, oldest_first=True):
                     msgtime = message.created_at.strftime("%m/%d/%y, %I:%M %p")
@@ -1143,7 +1143,7 @@ class HistoryView(discord.ui.View):
         super().__init__(timeout=None)
         self.add_item(History(member))
 
-client = RasiaBot()
+client = CanyonNetworkBot()
 client.launch_time = datetime.utcnow()
 
 @client.tree.command(guild=discord.Object(id=944668000072630312), description="View what commands this bot has.")
@@ -1306,7 +1306,7 @@ async def mute(interaction: discord.Interaction, member: discord.Member, time: s
             embed = discord.Embed(
                 title="",
                 description=
-                f"{member.mention}, you've been muted by the Rasia Discord Moderation Team for: \n \n{reason} \n \n**This Mute Will Not Expire**. \n \nIf you wish to appeal this punishment or think it was wrong, you may do so here: \nhttps://forms.gle/YNhQkjQi8JGsbb686",
+                f"{member.mention}, you've been muted by the CanyonNetwork Discord Moderation Team for: \n \n{reason} \n \n**This Mute Will Not Expire**. \n \nIf you wish to appeal this punishment or think it was wrong, you may do so here: \nhttps://forms.gle/YNhQkjQi8JGsbb686",
             color=0xff00e6)
             await member.send(embed=embed)
             await interaction.response.send_message(f'Muted {member} indefinitely!')
@@ -1376,7 +1376,7 @@ async def mute(interaction: discord.Interaction, member: discord.Member, time: s
                 embed = discord.Embed(
                     title="",
                     description=
-                    f"{member.mention}, you've been muted by the Rasia Discord Moderation Team for: \n \n{reason} \n \nThis Mute Will Expire At <t:{a}:t>. \n \nIf you wish to appeal this punishment or think it was wrong, you may do so here: \nhttps://forms.gle/YNhQkjQi8JGsbb686",
+                    f"{member.mention}, you've been muted by the CanyonNetwork Discord Moderation Team for: \n \n{reason} \n \nThis Mute Will Expire At <t:{a}:t>. \n \nIf you wish to appeal this punishment or think it was wrong, you may do so here: \nhttps://forms.gle/YNhQkjQi8JGsbb686",
                 color=0xff00e6)
                 await member.send(embed=embed)
                 await interaction.response.send_message(f"They've been muted until <t:{a}:t>.")
@@ -1433,7 +1433,7 @@ async def ban(interaction: discord.Interaction, member: discord.Member, time: st
             cursor = await db.execute('INSERT INTO bans VALUES (?,?,?,?,?,?);', (member.id, f'{reason}', f'{interaction.user}', f'{formatted}', 'null', len(rows)))
             embed = discord.Embed(
                 description=
-                f"{member.mention}, you've been banned by the Rasia Discord Moderation Team for: \n \n{reason} \n \n**This Ban Will Not Expire**. \n \nIf you wish to appeal this punishment or think it was wrong, you may do so here: \nhttps://forms.gle/YNhQkjQi8JGsbb686",
+                f"{member.mention}, you've been banned by the CanyonNetwork Discord Moderation Team for: \n \n{reason} \n \n**This Ban Will Not Expire**. \n \nIf you wish to appeal this punishment or think it was wrong, you may do so here: \nhttps://forms.gle/YNhQkjQi8JGsbb686",
             color=0xA50000)
             await member.send(embed=embed)
             await member.ban(reason=reason)
@@ -1501,7 +1501,7 @@ async def ban(interaction: discord.Interaction, member: discord.Member, time: st
             try:
                 embed = discord.Embed(
                     description=
-                    f"{member.mention}, you've been banned by the Rasia Discord Moderation Team for: \n \n{reason} \n \nThis Ban Will Expire At <t:{a}:t>. \n \nIf you wish to appeal this punishment or think it was wrong, you may do so here: \nhttps://forms.gle/YNhQkjQi8JGsbb686",
+                    f"{member.mention}, you've been banned by the CanyonNetwork Discord Moderation Team for: \n \n{reason} \n \nThis Ban Will Expire At <t:{a}:t>. \n \nIf you wish to appeal this punishment or think it was wrong, you may do so here: \nhttps://forms.gle/YNhQkjQi8JGsbb686",
                 color=0xA50000)
                 await member.send(embed=embed)
                 await member.ban(reason=reason)
@@ -1656,7 +1656,7 @@ async def warn(interaction: discord.Interaction, member: discord.Member, reason:
     await db.commit()
     await db.close()
     try:
-        await member.send(f'You have been warned in Rasia Network for `{reason}` at <t:{b}:t>.')
+        await member.send(f'You have been warned in CanyonNetwork Network for `{reason}` at <t:{b}:t>.')
         await interaction.response.send_message(f'Successfully warned {member.mention}!')
         a = await interaction.original_response()
         await asyncio.sleep(5)
@@ -1700,7 +1700,7 @@ async def kick(interaction: discord.Interaction, member: discord.Member, reason:
     await db.commit()
     await db.close()
     try:
-        await member.send(f'You have been kicked in Rasia Network for `{reason}` at <t:{b}:t>.')
+        await member.send(f'You have been kicked in CanyonNetwork Network for `{reason}` at <t:{b}:t>.')
         await interaction.response.send_message(f'Successfully kicked {member.mention}!')
         e = await interaction.original_response()
         await asyncio.sleep(5)
@@ -1725,7 +1725,7 @@ async def die(interaction: discord.Interaction):
             firstmessagetime = msg[0].created_at.strftime("%m/%d/%y, %I:%M %p")
             y = msg[0].mentions[0]
             file.write(f"""<information> \nTicket Creator: {msg[0].author} \nCreated At: {firstmessagetime} \nTicket Name: {interaction.channel} \n</information>
-<!DOCTYPE html><html><head><title>Ticket Transcript</title><meta name='viewport' content='width=device-width, initial-scale=1.0'><meta charset='UTF-8'><link href='https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap' rel='stylesheet'></head><body><style>information {{display: none;}} body {{background-color: #181d23;color: white;font-family: 'Open-Sans', sans-serif;margin: 50px;}}.ticket-header h2 {{font-weight: 400;text-transform: capitalize;margin-bottom: 0;color: #fff;}}.ticket-header p {{font-size: 14px;}}.ticket-header .children .item {{margin-right: 25px;display: flex;align-items: center;}}.ticket-header .children {{display: flex;}}.ticket-header .children .item a {{margin-right: 7px;padding: 5px 10px;padding-top: 6px;background-color: #3c434b;border-radius: 3px;font-size: 12px;}}.messages {{margin-top: 30px;display: flex;flex-direction: column;}}.messages .item {{display: flex;margin-bottom: 20px;}}.messages .item .left img {{border-radius: 100%;height: 50px;}}.messages .item .left {{margin-right: 20px;}}.messages .item .right a:nth-child(1) {{font-weight: 400;margin: 0 15px 0 0;font-size: 19px;color: #fff;}}.messages .item .right a:nth-child(2) {{text-transform: capitalize;color: #ffffff;font-size: 12px;}}.messages .item .right div {{display: flex;align-items: center;margin-top: 5px;}}.messages .item .right p {{margin: 0;white-space: normal;line-height: 2;color: #fff;font-size: 15px;}}.messages .item .right p {{max-width: 700px;margin-top: 10px;}}.messages .item {{margin-bottom: 31px;}}@media  only screen and (max-width: 600px) {{body {{margin: 0px;padding: 25px;width: calc(100% - 50px);}}.ticket-header h2 {{margin-top: 0px;}}.ticket-header .children {{display: flex;flex-wrap: wrap;}}</style><div class='ticket-header'><h2>{interaction.channel} Transcript</h2><div class='children'><div class='item'><a>CREATED</a><p>{firstmessagetime} GMT</p></div><div class='item'><a>USER</a><p>{y}</p></div></div></div><div class='messages'><div class='item'><div class='left'><img src='{interaction.guild.icon}'> </div><div class='right'><div><a>{interaction.guild.name}</a><a></a></div><p>Transcript File For Rasia Network</p></div></div>
+<!DOCTYPE html><html><head><title>Ticket Transcript</title><meta name='viewport' content='width=device-width, initial-scale=1.0'><meta charset='UTF-8'><link href='https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap' rel='stylesheet'></head><body><style>information {{display: none;}} body {{background-color: #181d23;color: white;font-family: 'Open-Sans', sans-serif;margin: 50px;}}.ticket-header h2 {{font-weight: 400;text-transform: capitalize;margin-bottom: 0;color: #fff;}}.ticket-header p {{font-size: 14px;}}.ticket-header .children .item {{margin-right: 25px;display: flex;align-items: center;}}.ticket-header .children {{display: flex;}}.ticket-header .children .item a {{margin-right: 7px;padding: 5px 10px;padding-top: 6px;background-color: #3c434b;border-radius: 3px;font-size: 12px;}}.messages {{margin-top: 30px;display: flex;flex-direction: column;}}.messages .item {{display: flex;margin-bottom: 20px;}}.messages .item .left img {{border-radius: 100%;height: 50px;}}.messages .item .left {{margin-right: 20px;}}.messages .item .right a:nth-child(1) {{font-weight: 400;margin: 0 15px 0 0;font-size: 19px;color: #fff;}}.messages .item .right a:nth-child(2) {{text-transform: capitalize;color: #ffffff;font-size: 12px;}}.messages .item .right div {{display: flex;align-items: center;margin-top: 5px;}}.messages .item .right p {{margin: 0;white-space: normal;line-height: 2;color: #fff;font-size: 15px;}}.messages .item .right p {{max-width: 700px;margin-top: 10px;}}.messages .item {{margin-bottom: 31px;}}@media  only screen and (max-width: 600px) {{body {{margin: 0px;padding: 25px;width: calc(100% - 50px);}}.ticket-header h2 {{margin-top: 0px;}}.ticket-header .children {{display: flex;flex-wrap: wrap;}}</style><div class='ticket-header'><h2>{interaction.channel} Transcript</h2><div class='children'><div class='item'><a>CREATED</a><p>{firstmessagetime} GMT</p></div><div class='item'><a>USER</a><p>{y}</p></div></div></div><div class='messages'><div class='item'><div class='left'><img src='{interaction.guild.icon}'> </div><div class='right'><div><a>{interaction.guild.name}</a><a></a></div><p>Transcript File For CanyonNetwork</p></div></div>
 """)
             async for message in interaction.channel.history(limit=None, oldest_first=True):
                 msgtime = message.created_at.strftime("%m/%d/%y, %I:%M %p")
@@ -1889,7 +1889,7 @@ async def on_member_join(member):
             title=f"Welcome, {member}!",
             description=
             f"""
-Welcome to Rasia Network, {member}! We hope you enjoy your stay.
+Welcome to CanyonNetwork, {member}! We hope you enjoy your stay.
 
 Be sure to verify yourself in <#945400059544080424> to view the rest of the channels!
 """,
@@ -1957,7 +1957,7 @@ async def dm(interaction: discord.Interaction, member: discord.Member, msg: str)
             embed = discord.Embed()
             embed.set_author(name="Message", icon_url=interaction.channel.guild.icon)
             embed.color = author.color
-            embed.add_field(name="Message from Rasia Network Moderation", value=msg[:1000] or "blank", inline=False)
+            embed.add_field(name="Message from CanyonNetwork Moderation", value=msg[:1000] or "blank", inline=False)
             if len(msg) > 1000:
                 embed.add_field(name="(Continued)", value=msg[1000:], inline=False)
             await member.send(embed=embed)
@@ -2082,7 +2082,7 @@ async def unmute(interaction: discord.Interaction, member: discord.Member, reaso
                 await modlogs.send(embed=embed)
                 await member.remove_roles(muted)
                 await member.add_roles(members)
-                await member.send(f"You've been unmuted in **Rasia Network**!")
+                await member.send(f"You've been unmuted in **CanyonNetwork**!")
                 await interaction.response.send_message(f'Unmuted {member}')
                 e = await interaction.original_response()
                 await asyncio.sleep(5)
@@ -2104,7 +2104,7 @@ async def unmute(interaction: discord.Interaction, member: discord.Member, reaso
                 await modlogs.send(embed=embed)
                 await member.remove_roles(muted)
                 await member.add_roles(members)
-                await member.send(f"You've been unmuted in **Rasia Network**!")
+                await member.send(f"You've been unmuted in **CanyonNetwork**!")
                 await interaction.response.send_message(f'Unmuted {member}')
                 e = await interaction.original_response()
                 await asyncio.sleep(5)
@@ -2163,7 +2163,7 @@ async def unmute(interaction: discord.Interaction, member: discord.Member, reaso
                 await modlogs.send(embed=embed)
                 await member.remove_roles(muted)
                 await member.add_roles(members)
-                await member.send(f"You've been unmuted in **Rasia Network**!")
+                await member.send(f"You've been unmuted in **CanyonNetwork**!")
                 await interaction.response.send_message(f'Unmuted {member}')
                 e = await interaction.original_response()
                 await asyncio.sleep(5)
@@ -2185,7 +2185,7 @@ async def unmute(interaction: discord.Interaction, member: discord.Member, reaso
                 await modlogs.send(embed=embed)
                 await member.remove_roles(muted)
                 await member.add_roles(members)
-                await member.send(f"You've been unmuted in **Rasia Network**!")
+                await member.send(f"You've been unmuted in **CanyonNetwork**!")
                 await interaction.response.send_message(f'Unmuted {member}')
                 e = await interaction.original_response()
                 await asyncio.sleep(5)
